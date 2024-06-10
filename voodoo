@@ -16,7 +16,7 @@ def get_var(script, varname):
 
 def get_vars(script):
     dict = {}
-    for i in ['hostdeps', 'rundeps', 'builddeps', 'imagedeps', 'from_source', 'deps']:
+    for i in ['hostdeps', 'hostrundeps', 'builddeps', 'from_source', 'deps']:
         dict[i] = get_var(script, i).decode().split(' ')
     return dict
 
@@ -82,8 +82,18 @@ def fetch_internal(recipe, host=False, level=0):
             if not os.path.exists(f'host-recipes/{dep}'):
                 fetch_internal(f'{dep}', host=True, level=level+1)
 
+    if len(vars['hostrundeps'][0]) > 0:
+        for dep in vars['hostrundeps']:
+            if not os.path.exists(f'host-recipes/{dep}'):
+                fetch_internal(f'{dep}', host=True, level=level+1)
+
     if len(vars['deps'][0]) > 0:
         for dep in vars['deps']:
+            if not os.path.exists(f'recipes/{dep}'):
+                fetch_internal(f'{dep}', level=level+1)
+
+    if len(vars['builddeps'][0]) > 0:
+        for dep in vars['builddeps']:
             if not os.path.exists(f'recipes/{dep}'):
                 fetch_internal(f'{dep}', level=level+1)
 
