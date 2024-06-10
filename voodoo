@@ -56,28 +56,32 @@ def new(args):
 
     print("Initialization complete!")
 
-def fetch_internal(recipe, host=False, level=0):
+def fetch_internal(recipe, host=False, source=False, level=0):
+    path = f"recipes/{recipe}" if not host and not source else f"host-recipes/{recipe}" if not source else f"source-recipes/{recipe}" 
 
-    path = f"recipes/{recipe}" if not host else f"host-recipes/{recipe}" 
-
-    with open(path, "wb+") as f:
-        f.write(urllib.request.urlopen(f"https://raw.githubusercontent.com/rdmsr/voodoo-packages/master/{path}").read())
-
-    vars = get_vars(path)
-
-    if len(vars['from_source'][0]) > 0:
-
+    if not source:
+        with open(path, "wb+") as f:
+            f.write(urllib.request.urlopen(f"https://raw.githubusercontent.com/rdmsr/voodoo-packages/master/{path}").read())
+    else:
         try:
-            data = urllib.request.urlopen(f"https://raw.githubusercontent.com/rdmsr/voodoo-packages/master/source-recipes/{vars['from_source'][0]}").read()
-            with open(f"source-recipes/{vars['from_source'][0]}", "wb+") as f:            
+            data = urllib.request.urlopen(f"https://raw.githubusercontent.com/rdmsr/voodoo-packages/master/{path}").read()
+            with open(path, "wb+") as f:            
                 f.write(data)
         except:
             # If there is no source-recipe, then the source must be in an existing recipe
-            if not os.path.exists(f'recipes/{vars["from_source"][0]}'):
-                fetch_internal(f"{vars['from_source'][0]}", level=level+1)
+            if not os.path.exists(f'recipes/{recipe}'):
+                fetch_internal(f"{recipe}", level=level+1)
+            
+            path = f'recipes/{recipe}'
+
+    vars = get_vars(path)
+
+
+    if len(vars['from_source'][0]) > 0:
+        fetch_internal(vars['from_source'][0], source=True, level=level+1)
 
     
-    print(f"{'    ' * (level-1)}{'└──' if level != 0 else ''}{' ' if level != 0 else ''}Fetched {'host ' if host else ''}recipe {recipe}")
+    print(f"{'    ' * (level-1)}{'└──' if level != 0 else ''}{' ' if level != 0 else ''}Fetched {'host ' if host else 'source ' if source else ''}recipe {recipe}")
 
     if len(vars['hostdeps'][0]) > 0:
         for dep in vars['hostdeps']:
