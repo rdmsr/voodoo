@@ -66,13 +66,15 @@ def fetch_internal(recipe, host=False, level=0):
     vars = get_vars(path)
 
     if len(vars['from_source'][0]) > 0:
-        with open(f"source-recipes/{vars['from_source'][0]}", "wb+") as f:            
-            try:
-                f.write(urllib.request.urlopen(f"https://raw.githubusercontent.com/rdmsr/voodoo-packages/master/source-recipes/{vars['from_source'][0]}").read())
-            except:
-                # If there is no source-recipe, then the source must be in an existing recipe
-                if not os.path.exists(f'recipes/{vars["from_source"][0]}'):
-                    fetch_internal(f"{vars['from_source'][0]}", level=level+1)
+
+        try:
+            data = urllib.request.urlopen(f"https://raw.githubusercontent.com/rdmsr/voodoo-packages/master/source-recipes/{vars['from_source'][0]}").read()
+            with open(f"source-recipes/{vars['from_source'][0]}", "wb+") as f:            
+                f.write(data)
+        except:
+            # If there is no source-recipe, then the source must be in an existing recipe
+            if not os.path.exists(f'recipes/{vars["from_source"][0]}'):
+                fetch_internal(f"{vars['from_source'][0]}", level=level+1)
 
     
     print(f"{'    ' * (level-1)}{'└──' if level != 0 else ''}{' ' if level != 0 else ''}Fetched {'host ' if host else ''}recipe {recipe}")
